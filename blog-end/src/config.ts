@@ -1,5 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 读取配置文件
 const configFile = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');

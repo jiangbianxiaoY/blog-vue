@@ -1,4 +1,5 @@
 <script setup lang="ts">
+
 const blogPosts = [
   {
     title: '开始使用Vue3',
@@ -42,6 +43,7 @@ const blogPosts = [
 .home {
   min-height: 100vh;
   background-color: #f5f5f5;
+  padding-top: 54px;
 }
 
 .hero {
