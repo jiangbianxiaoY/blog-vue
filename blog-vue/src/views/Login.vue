@@ -53,7 +53,7 @@
       const res = response.data
       if (res.success) {
         localStorage.setItem('token', res.token)
-        router.push('/')
+        router.push('/admin')
       } else {
         alert(res.message)
       }
@@ -65,6 +65,10 @@
   </script>
   
   <style scoped>
+  :root, .login-container, .login-container * {
+    font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  }
+  
   .login-container {
     display: flex;
     justify-content: center;

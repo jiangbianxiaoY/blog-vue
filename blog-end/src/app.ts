@@ -30,10 +30,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // 路由部分
 import categoriesRouter from './routes/Categories.js';
 import loginRouter from './routes/Login.js';
+import articleRouter from './routes/Article.js';
 
 app.use('/api/categories', categoriesRouter);
 app.use('/api/login', loginRouter);
-
+app.use('/api/articles', articleRouter);
 
 
 

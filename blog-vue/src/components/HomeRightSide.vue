@@ -1,27 +1,166 @@
 <template>
     <div class="home-right-side">
-        <div class="home-right-side-item">
-            <div class="home-right-side-item-title">
-                <h2>最新文章</h2>
+        
+        <h2 class="item-title">江边小余</h2>
+        <div class="item-content">
+            <span>知行合一，守正出奇</span>
+            <span>好好学习，天天向上</span>
+        </div>
+
+        <!-- 获取五个点赞 点击 加起来最多的文章 只显示这个文章的标题 点赞数 和 点击数-->
+        <h2 class="item-title">热门文章</h2>
+        <div class="item-content">
+            <!-- 遍历hotArticles数组 显示文章的标题 和 点击数-->
+            <div v-for="article in hotArticles" :key="article._id" class="hot-article-item">
+                <div class="hot-article-item-title">
+                   <span>{{ article.title }}</span> 
+                </div>
+                
+                <div class="hot-article-views-conments">
+                    <div>
+                       <img src="../../public/view.svg" alt="文件" class="hot-article-icon">
+                       <span class="hot-article-views">点击({{ article.views }})</span> 
+                    </div>
+                    <div>
+                        <img src="../../public/like.svg" alt="文件" class="hot-article-icon">
+                        <span class="hot-article-conments">喜欢({{ article.comments }})</span>
+                    </div>
+                </div>
             </div>
         </div>
+        <h2 class="item-title">其他链接</h2>
+        <div class="item-content">
+            <a href="https://www.csdn.net" target="_blank" class="net">CSDN</a>
+            <a href="https://www.juejin.cn" target="_blank" class="net">掘金</a>
+            <a href="https://www.jianshu.com" target="_blank" class="net">简书</a>
+            <a href="https://www.github.com" target="_blank" class="net">GitHub</a>
+            <a href="https://www.gitee.com" target="_blank" class="net">Gitee</a>
+            <a href="https://www.bilibili.com" target="_blank" class="net">B站</a>   
+        </div>
+        <h2 class="item-title">个人微信</h2>
+        <div class="item-content">
+            <img src="../../public/wechat.jpg" alt="文件" class="wechat-icon">
+        </div>
+
+
+
+        
+
+        
     </div>
 
 </template>
 
 <script setup lang="ts">
-// 无需引入 Navbar、Footer、router-view
+
+import {ref, onMounted} from 'vue'
+import axios from 'axios'
+
+interface Article {
+  _id: string;
+  title: string;
+  views: number;
+  comments: number;
+}
+
+//这个是热门文章的数组
+const hotArticles = ref<Article[]>([])
+
+
+
+const fetchHotArticles = async () => {
+    const response = await axios.get('http://localhost:3000/api/articles/hot')
+    try{
+        hotArticles.value = response.data.data;
+    }catch(error){
+        console.error('获取热门文章失败:', error)
+    }
+}
+
+
+onMounted(() => {
+    fetchHotArticles()
+})
+
+
 </script>
 
 <style scoped>
-.home-right-side {
-    width: 300px;
-    background: #f0f0f0;
-    position: fixed;
-    top: 54px; /* 导航栏高度 */
-    right: 0;
-    bottom: 0;
-    z-index: 10;
-    overflow-y: auto;
+:root, .home-right-side, .home-right-side * {
+  font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
 }
+
+.home-right-side {
+    padding-top:54px;
+    width: 100%;
+    background: #fff;
+    height: 100%;
+    border-left: 2px solid #e0e0e0;
+}
+
+.item-title{
+    font-size: 20px;
+    font-weight: normal;
+    margin-left: 10px; /* 推到最右边 */
+    padding-left: 10px; /* 距离右边 10px */
+    padding-top: 5px;
+    box-sizing: border-box;
+}
+
+.item-content{
+    font-size: 15px;
+    margin-left: 10px; /* 推到最右边 */
+    padding-left: 10px; /* 距离右边 10px */
+    padding-top: 1px;
+    box-sizing: border-box;
+    color: #347ab7;
+    display: flex;
+    flex-direction: column;
+}
+
+.hot-article-item {
+  display: flex;
+  margin-bottom: 12px;
+  flex-direction: column;
+
+  .hot-article-item-title{
+    font-size: 15px;
+    padding-bottom: 10px;
+  }
+
+  .hot-article-icon{
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+    display: inline-block;
+    margin-right: 3px;
+  }
+
+  .hot-article-views-conments{
+    font-size: 14px;
+    color: #999;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+  }
+
+  .hot-article-views, .hot-article-conments {
+    font-size: inherit;
+    vertical-align: middle;
+  }
+}
+
+.net{
+    font-size: 15px;
+    color: #347ab7;
+    text-decoration: none;
+    margin-right: 10px;
+    margin-bottom: 5px;
+}
+
+
+
+
 </style>
+
+

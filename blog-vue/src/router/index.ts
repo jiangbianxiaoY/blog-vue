@@ -4,6 +4,11 @@ import AboutLayout from '../layouts/AboutLayout.vue'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import About from '../views/About.vue'
+import AdminLayout from '../layouts/AdminLayout.vue'
+import Admin from '../views/Admin.vue'
+import Articles from '../components/Articles.vue'
+
+
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -35,7 +40,21 @@ const routes: Array<RouteRecordRaw> = [
         component: About
       }
     ]
-  },
+  },{
+    path: '/admin',
+    component: AdminLayout,
+    children: [
+      {
+        path: '',
+        redirect: '/admin/articles'
+      },
+      {
+        path: 'articles',
+        name: 'admin-articles',
+        component: Articles
+      }
+    ]
+  }
 ]
 
 const router = createRouter({

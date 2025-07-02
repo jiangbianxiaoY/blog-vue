@@ -14,7 +14,8 @@ import {
     getCategoryByIdHandler,
     getChildCategoriesHandler,
     updateCategoryHandler,
-    deleteCategoryHandler
+    deleteCategoryHandler,
+    getAllCategoriesWithChildHandler
 } from '../controllers/handleCategories.js';
 
 // 路由上挂载接口
@@ -24,5 +25,9 @@ router.get("/children/:parentId", getChildCategoriesHandler as (req: Request, re
 router.get(":id", getCategoryByIdHandler as (req: Request, res: Response) => void);
 router.put(":id", updateCategoryHandler as (req: Request, res: Response) => void);
 router.delete(":id", deleteCategoryHandler as (req: Request, res: Response) => void);
+router.get("/all", getAllCategoriesWithChildHandler as (req: Request, res: Response) => void);
+
+
+
 
 export default router;

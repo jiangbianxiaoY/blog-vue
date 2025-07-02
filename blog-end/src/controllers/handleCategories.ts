@@ -165,7 +165,24 @@ export const deleteCategoryHandler = async (req: Request, res: Response) => {
     }
 };
 
-
+//获取包括子类和父类的所有分类
+export const getAllCategoriesWithChildHandler = async (_req: Request, res: Response) => { 
+    try {
+        const categories = await getAllCategories();
+        res.json({
+            success: true,
+            message: 'All categories retrieved successfully',
+            data: categories
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error retrieving all categories',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        return; // 显式返回
+    }
+};
 
 
 

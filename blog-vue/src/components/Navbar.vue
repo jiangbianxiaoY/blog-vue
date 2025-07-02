@@ -52,6 +52,9 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const router = useRouter()
 
+import { useCategoryStore } from '../store/Category.js'
+const categoryStore = useCategoryStore()
+
 defineProps({
   hideLogin: {
     type: Boolean,
@@ -83,8 +86,11 @@ const fetchCategories = async () => {
   
   try {
     const response = await axios.get('http://localhost:3000/api/categories')
-    categories.value = response.data.data
-    console.log('获取到的分类数据:', categories.value)
+    categories.value = response.data.data;
+    categoryStore.setCategories(response.data.data)
+    //console.log('获取到的分类数据:', categories.value)
+    console.log('store 加载的分类');
+    //console.log(categoryStore.categories);
   } catch (err) {
     console.error('获取分类失败:', err)
     error.value = '获取分类数据失败，请稍后再试'
@@ -92,6 +98,10 @@ const fetchCategories = async () => {
     loading.value = false
   }
 }
+
+
+
+
 
 // 在组件挂载时获取分类数据
 onMounted(() => {
@@ -101,6 +111,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+:root, .navbar, .navbar * {
+  font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+
 .navbar {
   background-color: rgba(34, 34, 34);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);

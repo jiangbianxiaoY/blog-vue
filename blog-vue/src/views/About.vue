@@ -1,244 +1,258 @@
 <template>
-    <div class="about-container">
+    <div v-if="aboutData" class="about-container">
       <div class="about-card">
-        <div class="avatar-container">
-          <div class="avatar-circle">
-            <img 
-              src="https://via.placeholder.com/150" 
-              alt="个人头像"
-              class="avatar"
-            >
-          </div>
-        </div>
-        
-        <h1 class="title">关于我</h1>
-        
-        <div class="content-section">
-          <p class="intro-text">
-            我是江边小余，一名充满热情的全栈开发者，专注于创造优雅高效的Web解决方案。
-          </p>
-          
-          <div class="skills-section">
-            <h2 class="section-title">技术栈</h2>
-            <div class="skills-grid">
-              <div 
-                v-for="skill in skills" 
-                :key="skill.name"
-                class="skill-item"
-              >
-                <div class="skill-icon">
-                  <i :class="skill.icon"></i>
-                </div>
-                <span>{{ skill.name }}</span>
+        <!-- 用户信息区块 -->
+        <div class="user-info-section">
+          <!-- 基本信息 -->
+          <div class="info">
+            <!-- 头像 -->
+            <div class="avatar-container">
+              <div class="avatar-circle">
+                <img src="../../public/head.png" alt="个人头像" class="avatar" />
               </div>
             </div>
+  
+            <!-- 描述 -->
+            <p class="subtitle">{{ aboutData.about.description }}</p>
+  
+            <span>昵称：{{ aboutData.about.name }}</span>
+            <span>经历：{{ aboutData.about.experience }}</span>
+            <span>年龄：{{ newtime - aboutData.about.age }}</span>
+            <span>城市：{{ aboutData.about.location }}</span>
+            <span>邮箱：<a :href="`mailto:${aboutData.about.email}`">{{ aboutData.about.email }}</a></span>
+            <span>本项目链接：<a :href="aboutData.about.social_media.github" target="_blank">项目链接</a></span>
           </div>
-        </div>
-        
-        <div class="social-links">
-          <a 
-            v-for="link in socialLinks" 
-            :key="link.name"
-            :href="link.url"
-            target="_blank"
-            class="social-icon"
-          >
-            <i :class="link.icon"></i>
-          </a>
+  
+          <!-- 内容区块（兴趣爱好 + 研究方向） -->
+          <div class="content-section">
+            <!-- 兴趣爱好区块 -->
+            <div class="interests-section">
+              <h2 class="section-title">兴趣爱好</h2>
+              <ul class="interests-list">
+                <li v-for="item in aboutData.about.interests" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+  
+            <!-- 研究方向区块 -->
+            <div class="search-section">
+              <h2 class="section-title">研究方向</h2>
+              <ul class="interests-list">
+                <li v-for="item in aboutData.about.search" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </template>
   
   <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, onMounted } from 'vue'
+  import yaml from 'js-yaml'
   
-  const skills = ref([
-    { name: 'Vue.js', icon: 'fab fa-vuejs' },
-    { name: 'TypeScript', icon: 'fas fa-code' },
-    { name: 'Node.js', icon: 'fab fa-node-js' },
-    { name: 'CSS3', icon: 'fab fa-css3-alt' },
-    { name: 'Docker', icon: 'fab fa-docker' },
-    { name: 'Git', icon: 'fab fa-git-alt' }
-  ])
+  const newtime = ref(new Date().getFullYear())
   
-  const socialLinks = ref([
-    { name: 'GitHub', icon: 'fab fa-github', url: '#' },
-    { name: 'LinkedIn', icon: 'fab fa-linkedin', url: '#' },
-    { name: 'Twitter', icon: 'fab fa-twitter', url: '#' },
-    { name: 'Email', icon: 'fas fa-envelope', url: 'mailto:example@example.com' }
-  ])
+  const aboutData = ref<any>(null)
+  
+  onMounted(async () => {
+    const res = await fetch('/src/myselfconfig.yml')
+    const text = await res.text()
+    aboutData.value = yaml.load(text)
+  })
   </script>
   
   <style scoped>
-  /* 基础布局 */
+  :root, .about-container, .about-container * {
+    font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  }
+  
+  /* 容器 */
   .about-container {
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 2rem;
-    padding-top: 54px;
+    background: radial-gradient(circle at top left, #f8fafc, #e0e7ff);
+    padding: 3rem 1rem;
   }
   
-  /* 卡片设计 */
   .about-card {
     width: 100%;
-    max-width: 800px;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    padding: 2.5rem;
-    position: relative;
-    transform: translateY(20px);
+    max-width: 1000px;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    padding: 3rem;
+    font-family: 'Noto Sans SC', sans-serif;
+    animation: cardEnter 0.7s ease-out forwards;
+    transform: translateY(30px);
     opacity: 0;
-    animation: fadeInUp 0.6s ease-out forwards;
   }
   
-  /* 头像样式 */
-  .avatar-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1.5rem;
+  @keyframes cardEnter {
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
+  
+  /* 用户信息区块 */
+  .user-info-section {
+    display: flex;
+    flex-wrap: wrap; /* 小屏幕下可换行 */
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .info {
+    flex: 1 1 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    align-items: flex-start;
+    padding-left: 100px;
+  }
+  
+  .avatar-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem; /* 👈 关键：缩小与描述的距离 */
+}
   
   .avatar-circle {
-    width: 150px;
-    height: 150px;
+    width: 160px;
+    height: 160px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    padding: 6px;
     border-radius: 50%;
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    padding: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    animation: avatarFloat 4s ease-in-out infinite;
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+  }
+  
+  @keyframes avatarFloat {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
   }
   
   .avatar {
+    border: 4px solid white;
+    object-fit: cover;
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid white;
   }
   
-  /* 文字样式 */
-  .title {
-    text-align: center;
-    font-size: 2.5rem;
-    color: #2c3e50;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(to right, #667eea, #764ba2);
-    
-    -webkit-text-fill-color: transparent;
+  .subtitle {
+  text-align: center;
+  font-size: 1rem;
+  color: #6b7280;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.3rem; /* 可选：进一步压缩上边距 */
+}
+  
+  .info a {
+    color: #42b883;
+    text-decoration: none;
   }
   
-  .intro-text {
+  .info a:hover {
+    text-decoration: underline;
+  }
+  
+  .content-section {
+    padding-top: 200px;
+    flex: 1 1 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  /* 兴趣爱好区块 */
+  .interests-section,
+  .search-section {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
-    font-size: 1.1rem;
-    line-height: 1.8;
-    color: #555;
-    margin-bottom: 2rem;
   }
   
   .section-title {
     font-size: 1.5rem;
-    color: #2c3e50;
-    margin-bottom: 1.5rem;
+    font-weight: 600;
     text-align: center;
+    color: #1f2937;
+    margin-bottom: 1rem;
     position: relative;
   }
   
   .section-title::after {
     content: '';
-    display: block;
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(to right, #667eea, #764ba2);
+    width: 50px;
+    height: 4px;
+    background: linear-gradient(to right, #6366f1, #8b5cf6);
     margin: 0.5rem auto 0;
+    display: block;
+    border-radius: 2px;
   }
   
-  /* 技术栈网格 */
-  .skills-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  
-  .skill-item {
+  .interests-list {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: transform 0.3s ease;
-  }
-  
-  .skill-item:hover {
-    transform: translateY(-5px);
-  }
-  
-  .skill-icon {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border-radius: 50%;
-    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    list-style: none;
+    padding: 0;
     justify-content: center;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 1.8rem;
-    color: #667eea;
   }
   
-  /* 社交链接 */
-  .social-links {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    margin-top: 2rem;
+  .interests-list li {
+    background: #e6f4f1;
+    color: #42b883;
+    padding: 0.4rem 1rem;
+    border-radius: 16px;
+    font-size: 0.98rem;
+    font-weight: 500;
   }
   
-  .social-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #f5f7fa;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #667eea;
-    font-size: 1.2rem;
-    transition: all 0.3s ease;
-  }
-  
-  .social-icon:hover {
-    background: #667eea;
-    color: white;
-    transform: scale(1.1);
-  }
-  
-  /* 动画 */
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  /* 响应式设计 */
+  /* 响应式 */
   @media (max-width: 768px) {
     .about-card {
-      padding: 1.5rem;
+      padding: 2rem;
     }
-    
-    .skills-grid {
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  
+    .user-info-section {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .info,
+    .content-section {
+      width: 100%;
+      flex: 1 1 100%;
+    }
+  
+    .info {
+      gap: 0.8rem;
+      font-size: 1rem;
+    }
+  
+    .avatar-circle {
+      width: 120px;
+      height: 120px;
+    }
+  
+    .subtitle {
+      font-size: 1rem;
     }
   }
   </style>
