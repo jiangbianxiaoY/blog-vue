@@ -82,10 +82,7 @@
                 </div>
             </div>
 
-            <router-link to="/admin/drafts" class="menu-item">
-                <i class="fas fa-draft"></i>
-                <span>草稿箱</span>
-            </router-link>
+            <!---->
             
             <div class="menu-divider"></div>
             

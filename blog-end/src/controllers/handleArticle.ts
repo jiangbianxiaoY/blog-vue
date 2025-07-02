@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getAllArticles, createArticle } from '../models/mongo/article.js';
+import { getAllArticles, createArticle, deleteArticle,  connectToDatabase } from '../models/mongo/article.js';
 
 
 
@@ -11,7 +11,8 @@ import {Article } from '../models/mongo/article.js';
 // 获取所有文章
 export async function getArticlesHandler(req: Request, res: Response) {
   try {
-    const articles = await getAllArticles();
+    // 只返回非草稿文章
+    const articles = (await getAllArticles()).filter(article => article.isDraft === false);
     // 处理 limit 和 newerThan 参数
     const limit = Number(req.query.limit) || articles.length;
     const newerThan = req.query.newerThan ? Number(req.query.newerThan) : undefined;
@@ -86,8 +87,8 @@ export async function getHotArticlesHandler(_req: Request, res: Response){
     
     //查询热门文章
     try {
-        const articles = await getAllArticles();
-        // console.log(articles);
+        // 只返回非草稿文章
+        const articles = (await getAllArticles()).filter(article => article.isDraft === false);
         //排序，按 views + comments 总和降序
         articles.sort((a: Article, b: Article) => {
             return (b.views + b.comments) - (a.views + a.comments);
@@ -111,7 +112,8 @@ export async function getHotArticlesHandler(_req: Request, res: Response){
 // 获取最近更新的文章
 export async function getRecentArticlesHandler(req: Request, res: Response) {
   try {
-    const articles = await getAllArticles();
+    // 只返回非草稿文章
+    const articles = (await getAllArticles()).filter(article => article.isDraft === false);
     const limit = Number(req.query.limit) || 10;
     // 按 updateTime 降序排列
     articles.sort((a: Article, b: Article) => b.updateTime - a.updateTime);
@@ -131,7 +133,8 @@ export async function getRecentArticlesHandler(req: Request, res: Response) {
 // 获取评论数最多的文章
 export async function getMostCommentedArticlesHandler(req: Request, res: Response) {
   try {
-    const articles = await getAllArticles();
+    // 只返回非草稿文章
+    const articles = (await getAllArticles()).filter(article => article.isDraft === false);
     const limit = Number(req.query.limit) || 10;
     // 按 comments 降序排列
     articles.sort((a: Article, b: Article) => b.comments - a.comments);
@@ -151,7 +154,8 @@ export async function getMostCommentedArticlesHandler(req: Request, res: Respons
 // 获取浏览量最多的文章
 export async function getMostViewedArticlesHandler(req: Request, res: Response) {
   try {
-    const articles = await getAllArticles();
+    // 只返回非草稿文章
+    const articles = (await getAllArticles()).filter(article => article.isDraft === false);
     const limit = Number(req.query.limit) || 10;
     // 按 views 降序排列
     articles.sort((a: Article, b: Article) => b.views - a.views);
@@ -171,6 +175,8 @@ export async function getMostViewedArticlesHandler(req: Request, res: Response) 
 // 搜索标题包含关键字的文章
 export async function searchArticlesByTitleHandler(req: Request, res: Response) {
   try {
+    // 只返回非草稿文章
+    const articles = (await getAllArticles()).filter(article => article.isDraft === false);
     const { title, limit } = req.query;
     if (!title || typeof title !== 'string') {
       return res.status(400).json({
@@ -178,21 +184,216 @@ export async function searchArticlesByTitleHandler(req: Request, res: Response) 
         message: '缺少 title 查询参数'
       });
     }
-    const articles = await getAllArticles();
     // 模糊匹配 title，忽略大小写
     const matched = articles.filter(article =>
       article.title && article.title.toLowerCase().includes(title.toLowerCase())
     );
     const max = Number(limit) || matched.length;
-    return res.status(200).json({ // 显式返回 res.json()
+    return res.status(200).json({
       success: true,
       data: matched.slice(0, max)
     });
   } catch (error) {
     console.error('Error searching articles by title:', error);
-    return res.status(500).json({ // 显式返回 res.json()
+    return res.status(500).json({
       success: false,
       message: 'Failed to search articles by title'
+    });
+  }
+}
+
+// 伪删除：将文章草稿状态设为 true
+export async function deleteArticleHandler(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少文章 id 参数'
+      });
+    }
+    // 查询文章
+    const articles = await getAllArticles();
+    const article = articles.find(a => a._id && a._id.toString() === id);
+    if (!article) {
+      return res.status(404).json({
+        success: false,
+        message: '未找到对应的文章'
+      });
+    }
+    if (article.isDraft) {
+      // 草稿，允许物理删除
+      const result = await deleteArticle(id);
+      if (result && result.deletedCount > 0) {
+        return res.status(200).json({
+          success: true,
+          message: '草稿文章已彻底删除'
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: '删除失败，请重试'
+        });
+      }
+    } else {
+      // 非草稿，不能删除
+      return res.status(403).json({
+        success: false,
+        message: '非草稿文章无法删除，请先将其设为草稿'
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting article:', error);
+    return res.status(500).json({
+      success: false,
+      message: '删除文章失败'
+    });
+  }
+}
+
+// 获取所有草稿状态的文章
+export async function getDraftArticlesHandler(_req: Request, res: Response) {
+  try {
+    const articles = (await getAllArticles()).filter(article => article.isDraft === true);
+    res.status(200).json({
+      success: true,
+      data: articles
+    });
+  } catch (error) {
+    console.error('Error fetching draft articles:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch draft articles'
+    });
+  }
+}
+
+// 根据 id 反转草稿状态
+export async function toggleArticleDraftHandler(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少文章 id 参数'
+      });
+    }
+    const articles = await getAllArticles();
+    const article = articles.find(a => a._id && a._id.toString() === id);
+    if (!article) {
+      return res.status(404).json({
+        success: false,
+        message: '未找到对应的文章'
+      });
+    }
+    const newDraft = !article.isDraft;
+    const { client, collection } = await connectToDatabase();
+    try {
+      const result = await collection.updateOne(
+        { _id: article._id },
+        { $set: { isDraft: newDraft } }
+      );
+      if (result.modifiedCount > 0) {
+        return res.status(200).json({
+          success: true,
+          message: `草稿状态已${newDraft ? '设为草稿' : '设为非草稿'}`
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: '草稿状态更新失败'
+        });
+      }
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('Error toggling draft status:', error);
+    return res.status(500).json({
+      success: false,
+      message: '草稿状态更新失败'
+    });
+  }
+}
+
+// 根据 id 获取单篇文章详情
+import { ObjectId } from 'mongodb';
+
+export async function getArticleByIdHandler(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少文章 id 参数'
+      });
+    }
+    const { client, collection } = await connectToDatabase();
+    try {
+      const article = await collection.findOne({ _id: new ObjectId(id) });
+      if (!article) {
+        return res.status(404).json({
+          success: false,
+          message: '未找到对应的文章'
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        data: article
+      });
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('Error fetching article by id:', error);
+    return res.status(500).json({
+      success: false,
+      message: '获取文章详情失败'
+    });
+  }
+}
+
+// 根据 id 修改博客内容
+export async function updateArticleHandler(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少文章 id 参数'
+      });
+    }
+    if (!updateData || Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少更新内容'
+      });
+    }
+    const { client, collection } = await connectToDatabase();
+    try {
+      const result = await collection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { ...updateData, updateTime: Date.now() } }
+      );
+      if (result.matchedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: '未找到对应的文章'
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        message: '文章更新成功'
+      });
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('Error updating article:', error);
+    return res.status(500).json({
+      success: false,
+      message: '文章更新失败'
     });
   }
 }

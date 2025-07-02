@@ -1,0 +1,264 @@
+<template>
+  <div class="create-blog-container">
+    <div class="create-blog-header">
+      <h1 class="create-blog-header-title">修改博客</h1>
+    </div>
+    <form class="create-blog-form" @submit.prevent="saveChange">
+      <div class="form-group">
+        <label>标题：</label>
+        <input v-model="title" type="text" class="form-input" placeholder="请输入标题" required />
+      </div>
+      <div class="form-group">
+        <label>分类：</label>
+        <select v-model="selectedCategory" class="form-select" required @change="onCategoryChange">
+          <option value="" disabled>请选择分类</option>
+          <option v-for="cat in parentCategories" :key="cat._id" :value="cat._id">
+            {{ cat.category }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>子分类：</label>
+        <select v-model="selectedSubCategory" class="form-select" :disabled="!filteredSubCategories.length">
+          <option value="" disabled>请选择子分类</option>
+          <option v-for="sub in filteredSubCategories" :key="sub._id" :value="sub._id">
+            {{ sub.category }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>作者：</label>
+        <input type="text" class="form-input" placeholder="请输入作者" v-model="author" />
+      </div>
+      <div class="form-group">
+        <label>内容：</label>
+        <div id="vditor" class="vditor-custom"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="form-btn" @click="saveAsDraft">保存为草稿</button>
+        <button type="submit" class="form-btn">保存修改</button>
+      </div>
+    </form>
+
+    
+
+
+
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
+import { useAllCategoryStore } from '../store/Category.js';
+import axios from 'axios';
+import Vditor from 'vditor';
+import 'vditor/dist/index.css';
+
+const route = useRoute();
+const blogId = route.params.id as string;
+
+const title = ref('');
+const selectedCategory = ref('');
+const selectedSubCategory = ref('');
+const content = ref('');
+const author = ref('');
+const isDraft = ref(false);
+
+const allCategoryStore = useAllCategoryStore();
+const allCategories = computed(() => allCategoryStore.allCategories);
+const parentCategories = ref<any[]>([]);
+const allChildCategories = ref<any[]>([]);
+const filteredSubCategories = ref<any[]>([]);
+
+watch(
+  allCategories,
+  (val) => {
+    parentCategories.value = val.filter(cat => !cat.parentid || cat.parentid === '' || cat.parentid === null);
+    allChildCategories.value = val.filter(cat => cat.parentid && cat.parentid !== '' && cat.parentid !== null);
+  },
+  { immediate: true }
+);
+
+const onCategoryChange = () => {
+  selectedSubCategory.value = '';
+  filteredSubCategories.value = allChildCategories.value.filter(
+    cat => String(cat.parentid) === String(selectedCategory.value)
+  );
+};
+
+let vditor: Vditor | null = null;
+
+const fetchBlogDetail = async () => {
+  try {
+    const response = await axios.get(`http://localhost:3000/api/articles/${blogId}`);
+    if (response.data && response.data.success) {
+      const blog = response.data.data;
+      title.value = blog.title;
+      content.value = blog.content;
+      author.value = blog.authorName;
+      selectedCategory.value = blog.categoryid;
+      onCategoryChange();
+      selectedSubCategory.value = blog.childCategories;
+      isDraft.value = blog.isDraft;
+      if (vditor) {
+        vditor.setValue(blog.content);
+      }
+    }
+  } catch (e) {
+    alert('获取文章详情失败');
+  }
+};
+
+const saveChange = async () => {
+  if (vditor) {
+    content.value = vditor.getValue();
+  }
+  if (!title.value || !selectedCategory.value || !content.value) {
+    alert('请填写完整信息');
+    return;
+  }
+  try {
+    const payload = {
+      title: title.value,
+      content: content.value,
+      authorName: author.value,
+      categoryid: selectedCategory.value,
+      childCategories: selectedSubCategory.value,
+      isDraft: isDraft.value
+    };
+    const response = await axios.put(`http://localhost:3000/api/articles/${blogId}`, payload);
+    if (response.data && response.data.success) {
+      alert('修改成功！');
+    } else {
+      alert('修改失败');
+    }
+  } catch (e) {
+    alert('修改失败');
+  }
+};
+
+const saveAsDraft = async () => {
+  if (vditor) {
+    content.value = vditor.getValue();
+  }
+  if (!title.value || !selectedCategory.value || !content.value) {
+    alert('请填写完整信息');
+    return;
+  }
+  try {
+    const payload = {
+      title: title.value,
+      content: content.value,
+      authorName: author.value,
+      categoryid: selectedCategory.value,
+      childCategories: selectedSubCategory.value,
+      isDraft: true
+    };
+    const response = await axios.put(`http://localhost:3000/api/articles/${blogId}`, payload);
+    if (response.data && response.data.success) {
+      alert('草稿保存成功！');
+    } else {
+      alert('草稿保存失败');
+    }
+  } catch (e) {
+    alert('草稿保存失败');
+  }
+};
+
+onMounted(() => {
+  vditor = new Vditor('vditor', {
+    height: 400,
+    placeholder: '请输入博客内容，支持Markdown语法',
+    value: content.value,
+    mode: 'sv',
+    toolbar: [
+      'emoji', 'headings', 'bold', 'italic', 'strike', 'link', 'list', 'ordered-list', 'check', 'outdent', 'indent',
+      'quote', 'line', 'code', 'inline-code', 'insert-after', 'insert-before', 'upload', 'table', 'record', 'undo', 'redo',
+      'fullscreen', 'edit-mode', 'both', 'preview', 'info', 'help', 'br', 'export', 'outline', 'devtools', 'sub', 'sup', 'toc', 'code-theme', 'content-theme', 'theme', 'search', 'find', 'copy', 'paste', 'select-all', 'hr', 'image', 'video', 'audio', 'wordcount', 'read-mode', 'md', 'html', 'pdf', 'print', 'download', 'upload', 'settings'
+    ],
+    toolbarConfig: {
+      pin: true,
+      hide: false
+    },
+    cache: { enable: false },
+    input(value: string) {
+      content.value = value;
+    },
+    upload: {
+      accept: 'image/*',
+      multiple: false,
+      handler(files) {
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const base64 = e.target?.result;
+          if (vditor) {
+            vditor.insertValue(`![](${base64})`);
+          }
+          return null;
+        };
+        reader.readAsDataURL(file);
+        return null;
+      }
+    }
+  });
+  fetchBlogDetail();
+});
+
+onBeforeUnmount(() => {
+  if (vditor) {
+    vditor.destroy();
+    vditor = null;
+  }
+});
+</script>
+
+<style scoped>
+.create-blog-container {
+  
+  
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 32px 40px;
+}
+.create-blog-header-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 24px;
+  color: #222;
+  text-align: center;
+}
+.create-blog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-input, .form-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: black;
+}
+.form-select:disabled {
+  background: #f5f5f5;
+  color: #aaa;
+}
+.vditor-custom {
+  border-radius: 4px;
+  overflow: hidden;
+}
+.form-actions { display: flex; justify-content: flex-end; gap: 16px; }
+.form-btn { padding: 8px 32px; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+.form-btn.save { background: #3498db; color: #fff; }
+.form-btn.save:hover { background: #217dbb; }
+.form-btn.draft { background: #f5a623; color: #fff; }
+.form-btn.draft:hover { background: #d48806; }
+</style>

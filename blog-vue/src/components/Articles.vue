@@ -28,7 +28,15 @@
                     </select>
                 </div>
                 
+                <div class="createBlog-button-div">
+                    <button class="createBlog-button" @click="createBlog">创建博客</button>
+                </div>
 
+
+                <!--一个按钮 点击后向后端查询文章状态为草稿的博客文章-->
+                <div class="article-search-button">
+                    <button class="article-search-button-draft" @click="fetchDraftBlog">草稿箱</button>
+                </div>
                 
             </div>
 
@@ -62,9 +70,10 @@
 
                 
                 <div class="article-card-buttons">
-                    <img src="../../public/changeblog.svg" alt="修改" class="article-card-button">
-                    <img src="../../public/deleteblog.svg" alt="删除" class="article-card-button">
-                    <img src="../../public/readblog.svg" alt="查看" class="article-card-button">
+                    <img src="../../public/changeblog.svg" alt="修改" class="article-card-button" @click="changeBlog(article._id)">
+                    <img src="../../public/caogao.svg" alt="转为草稿" class="article-card-button" @click="changeToDraftOrNormal(article._id)">
+                    <img src="../../public/readblog.svg" alt="查看" class="article-card-button" @click="readBlog(article._id)">
+                    <img src="../../public/deleteblog.svg" alt="删除" class="article-card-button" @click="deleteBlog(article._id)">
                 </div>
             </div>
         </div>
@@ -80,9 +89,12 @@
 
 
 import { ref } from 'vue';
-//import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { onMounted } from 'vue';
 import axios from 'axios';
+import MarkdownIt from 'markdown-it';
+const md = new MarkdownIt();
+const router = useRouter();
 
 import { useAllCategoryStore } from '../store/Category.js';
 
@@ -111,13 +123,16 @@ const getCategoryName = (categoryid: string) => {
 //从博客的内容部分截取前三行字符并解析为html格式
 const getArticleContent = (content: string) => {
     const lines = content.split('\n');
-    const htmlContent = lines.slice(0, 3).map(line => `<p>${line}</p>`).join('');
+    const previewContent = lines.slice(0, 3).join('\n');
+    // 使用markdown-it解析Markdown为HTML
+    const htmlContent = md.render(previewContent);
     return htmlContent;
 }
 
 
 
 //申明一个函数访问对应博客的接口
+/*
 interface Article {
   _id: string;
   title: string;
@@ -130,7 +145,7 @@ interface Article {
   updateTime?: number;
   views?: number;
   comments?: number;
-}
+}*/
 
 
 
@@ -285,8 +300,72 @@ const clearSearch = () => {
     fetchnowBlogList();
 }
 
+const fetchDraftBlog = async()=>{
+    isLoading.value = true;
+    errorMessage.value = '';
+    try{
+        const response = await axios.get('http://localhost:3000/api/articles/draft');
+        if(response.status === 200){
+            blogList.value = response.data.data;
+        }
+    }catch(error){
+        console.error('获取草稿箱失败:',error);
+        errorMessage.value = '获取草稿箱失败，请稍后再试';
+    }
+}
 
 
+
+
+const createBlog = () => {
+    router.push('/admin/createBlog');
+}
+
+
+
+//修改博客
+const changeBlog = (id: string) => {
+    router.push(`/admin/changeBlog/${id}`);
+}
+
+
+//删除博客
+const deleteBlog = async (id: string) => {
+    try {
+        const response = await axios.delete(`http://localhost:3000/api/articles/${id}`);
+        if (response.data.success) {
+            // 删除成功
+            window.alert(response.data.message);
+            // 刷新页面
+            fetchBlogList();
+        } else {
+            // 删除失败（非草稿文章）
+            window.alert(response.data.message);
+        }
+    } catch (error) {
+        console.error('删除博客失败:', error);
+        window.alert('删除博客失败，请稍后再试');
+    }
+}
+
+
+//修改博客状态为草稿或正常
+const changeToDraftOrNormal = (id: string) => {
+    //需要调用接口修改后端的数据的博客啊 根据博客id来的
+    axios.put(`http://localhost:3000/api/articles/draft/${id}`).then(response => {
+        if(response.status === 200){
+            //修改成功后 刷新页面
+            fetchBlogList();
+        }
+    })
+}
+
+
+//查看博客
+
+const readBlog = (id: string) => {
+    router.push(`/readBlog/${id}`);
+}
 
 
 
@@ -328,6 +407,33 @@ onMounted(() => {
         gap: 10px;
     }
 
+    .createBlog-button-div{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .createBlog-button{
+        font-size: 15px;
+        font-weight: normal;
+        height: 24px;
+        background-color: #097bed;
+        color: #fff;
+    }
+
+
+    .article-search-button-draft{
+        font-size: 15px;
+        font-weight: normal;
+        height: 24px;
+        background-color: #ff0000;
+        color: #fff;
+    }
+
+    
+    
 }
 
 
@@ -460,6 +566,12 @@ onMounted(() => {
         .article-card-button{
             width: 20px;
             height: 20px;
+        }
+        /* 鼠标悬停时 按钮变大 变得悬浮 并且有阴影*/
+        .article-card-button:hover{
+            cursor: pointer;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
         }
     }
 }

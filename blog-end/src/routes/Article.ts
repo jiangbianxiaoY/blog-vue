@@ -15,17 +15,26 @@ import {
     getRecentArticlesHandler,
     getMostCommentedArticlesHandler,
     getMostViewedArticlesHandler,
-    searchArticlesByTitleHandler
+    searchArticlesByTitleHandler,
+    deleteArticleHandler,
+    getDraftArticlesHandler,
+    toggleArticleDraftHandler,
+    getArticleByIdHandler,
+    updateArticleHandler
 } from '../controllers/handleArticle.js';
-//挂载接口
-router.get("/", getArticlesHandler as (req: Request, res: Response) => void);
-router.post("/", createArticleHandler as (req: Request, res: Response) => void);
-router.get("/hot",getHotArticlesHandler as (req: Request, res: Response) => void);
+//挂载接口，注意顺序，:id 路由放最后
+router.get("/hot", getHotArticlesHandler as (req: Request, res: Response) => void);
 router.get("/updateTime", getRecentArticlesHandler as (req: Request, res: Response) => void);
 router.get("/comments", getMostCommentedArticlesHandler as (req: Request, res: Response) => void);
 router.get("/views", getMostViewedArticlesHandler as (req: Request, res: Response) => void);
 router.get("/search", searchArticlesByTitleHandler as (req: Request, res: Response) => void);
-
+router.get("/draft", getDraftArticlesHandler as (req: Request, res: Response) => void);
+router.put("/draft/:id", toggleArticleDraftHandler as (req: Request, res: Response) => void);
+router.get("/", getArticlesHandler as (req: Request, res: Response) => void);
+router.post("/", createArticleHandler as (req: Request, res: Response) => void);
+router.delete( "/:id", deleteArticleHandler as (req: Request, res: Response) => void);
+router.get( "/:id", getArticleByIdHandler as (req: Request, res: Response) => void);
+router.put("/:id", updateArticleHandler as (req: Request, res: Response) => void);
 
 
 

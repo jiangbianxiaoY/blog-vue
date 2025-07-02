@@ -5,8 +5,8 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import About from '../views/About.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
-import Admin from '../views/Admin.vue'
 import Articles from '../components/Articles.vue'
+import BlogDetailLayout from '../layouts/BlogDetailLayout.vue'
 
 
 
@@ -52,6 +52,31 @@ const routes: Array<RouteRecordRaw> = [
         path: 'articles',
         name: 'admin-articles',
         component: Articles
+      },
+      {
+        path: 'createBlog',
+        name: 'admin-createBlog',
+        component: () => import('../components/CreateBlog.vue')
+      },
+      {
+        path: 'changeBlog/:id',
+        name: 'admin-changeBlog',
+        component: () => import('../components/ChangeBlog.vue')
+      }
+    ]
+  },
+  {
+    path: '/changeBlog/:id',
+    name: 'change-blog',
+    component: () => import('../components/ChangeBlog.vue')
+  },{
+    path: '/blogDetail/:id',
+    component: BlogDetailLayout,
+    children: [
+      {
+        path: '',
+        name: 'blog-detail',
+        component: () => import('../components/Detial.vue')
       }
     ]
   }

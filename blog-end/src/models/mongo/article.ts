@@ -1,7 +1,3 @@
-
-
-
-
 import config from "../../config.js";
 import { MongoClient, ObjectId } from "mongodb";
 
@@ -68,3 +64,31 @@ export async function getAllArticles(): Promise<Article[]> {
     await client.close();
   }
 }
+
+// 根据 id 删除文章
+export async function deleteArticle(id: string) {
+  const { client, collection } = await connectToDatabase();
+  try {
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    return result;
+  } finally {
+    await client.close();
+  }
+}
+
+// 伪删除：将文章 isDraft 设为 true
+export async function setArticleDraftTrue(id: string) {
+  const { client, collection } = await connectToDatabase();
+  try {
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { isDraft: true } }
+    );
+    return result;
+  } finally {
+    await client.close();
+  }
+}
+
+// 导出 connectToDatabase 以便外部调用
+export { connectToDatabase };

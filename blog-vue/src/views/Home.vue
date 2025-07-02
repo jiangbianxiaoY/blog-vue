@@ -14,7 +14,7 @@
             
           </div>
           <div class="post-summary" v-html="renderMarkdown(post.content)"></div>
-          <button class="read-more">Read more</button>
+          <button class="read-more" @click="router.push(`/blogDetail/${post._id}`)">Read more</button>
         </article>
         <div v-if="articles.length === 0" class="no-articles">暂无文章</div>
       </section>
@@ -31,6 +31,8 @@ import { reactive, onMounted } from 'vue'
 import axios from 'axios';
 import { useCategoryStore } from '../store/Category.js'
 import MarkdownIt from 'markdown-it'
+import { useRouter } from 'vue-router';
+const router = useRouter();
 const md = new MarkdownIt()
 const categoryStore = useCategoryStore();
 const categories = categoryStore;
@@ -53,7 +55,9 @@ let articles = reactive<Article[]>([]);
 
 const fetchArticles = async () => {
   const response = await axios.get('http://localhost:3000/api/articles?limit=5');
-  articles.splice(0, articles.length, ...response.data.data);
+  // 按 createTime 降序排序
+  const sorted = response.data.data.sort((a: Article, b: Article) => b.createTime - a.createTime);
+  articles.splice(0, articles.length, ...sorted);
   console.log(articles);
 }
 
@@ -161,6 +165,7 @@ h1 {
   width: 100%; /* 占满可用宽度 */
   text-align: left; /* 单独设置左对齐 */
   padding: 0 1rem; /* 可选：添加一些内边距 */
+  margin-bottom: 10px;
 }
 
 .read-more {
