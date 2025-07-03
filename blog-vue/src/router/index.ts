@@ -7,6 +7,7 @@ import About from '../views/About.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import Articles from '../components/Articles.vue'
 import BlogDetailLayout from '../layouts/BlogDetailLayout.vue'
+import CategoryDetailLayout from '../layouts/CategoryDetailLayout.vue'
 
 
 
@@ -76,6 +77,17 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '',
         name: 'blog-detail',
+        component: () => import('../components/Detial.vue')
+      }
+    ]
+  },
+  {
+    path: '/categoryDetail/:id',
+    component: CategoryDetailLayout,
+    children: [
+      {
+        path: '',
+        name: 'category-detail',
         component: () => import('../components/Detial.vue')
       }
     ]

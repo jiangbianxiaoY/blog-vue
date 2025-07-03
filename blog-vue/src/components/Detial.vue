@@ -57,8 +57,32 @@ const route = useRoute();
 const id = route.params.id;
 const article = ref<any>(null);
 const vditorPreview = ref<HTMLDivElement | null>(null);
+const subCategoryArticles = ref<any[]>([]);
 
-onMounted(() => {
+function getAllSubCategories(treeCategoryList: any[]) {
+  return treeCategoryList.flatMap(parent =>
+    (parent.children || []).map((child: any) => ({
+      categoryId: child._id,
+      categoryName: child.category
+    }))
+  );
+}
+
+async function fetchArticlesBySubCategories(subCategories: any[]) {
+  const results = await Promise.all(
+    subCategories.map(async (cat) => {
+      // 假设后端接口为 /api/articles?categoryid=xxx
+      const res = await axios.get(`/api/articles?categoryid=${cat.categoryId}`);
+      return {
+        ...cat,
+        articles: res.data.data || []
+      };
+    })
+  );
+  return results;
+}
+
+onMounted(async () => {
   axios.get(`http://localhost:3000/api/articles/${id}`).then(res => {
     article.value = res.data.data;
     setTimeout(() => {
@@ -75,6 +99,12 @@ onMounted(() => {
       }
     }, 100);
   });
+
+  // 获取所有二级分类下的文章
+  const treeCategoryList = categories.categories || [];
+  const subCategories = getAllSubCategories(treeCategoryList);
+  subCategoryArticles.value = await fetchArticlesBySubCategories(subCategories);
+  console.log('subCategoryArticles:', subCategoryArticles.value);
 });
 
 watch(

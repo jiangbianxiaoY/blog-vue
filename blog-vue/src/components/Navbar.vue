@@ -11,7 +11,7 @@
             <router-link
               v-for="cat in categories"
               :key="cat._id"
-              :to="`/category/${cat.category}`"
+              :to="`/categoryDetail/${cat._id}`"
               class="navbar-category-item"
               active-class="is-active"
             >
